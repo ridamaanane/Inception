@@ -5,18 +5,18 @@ services:
     container_name: nginx         # name of the container
     ports:
       - "8443:443"               
-    # depends_on:
-    #   - wordpress
+    depends_on:
+      - wordpress
     networks:
       - inception    #join the network
 
-  # wordpress:
-  #   build: ./requirements/wordpress
-  #   container_name: wordpress       
-  #   depends_on:
-  #     - mariadb                      
-  #   networks:
-  #     - inception                   
+  wordpress:
+    build: ./requirements/wordpress
+    container_name: wordpress       
+    # depends_on:
+    #   - mariadb                      
+    networks:
+      - inception                   
 
   # mariadb:   
   #   build: ./requirements/mariadb 
