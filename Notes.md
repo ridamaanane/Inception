@@ -169,4 +169,21 @@ It understands:
 
 `[docker-compose reads file → builds images → creates containers → connects everything → runs system]`
 
+**Run container without dependencies in dockerfile**
+
+`sudo docker compose up --no-deps nginx`
+
+**To Stops and removes containers and Volumes:
+
+`docker compose down -v`
+
+`down` : shuts everything down 
+`-v` : Removes volumes
+
+___
+
+**Difference between CMD and ENTRYPOINT**
+
+cmd to run commands, and entrypoint to run scripts
+
 </details>
