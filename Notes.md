@@ -187,3 +187,22 @@ ___
 cmd to run commands, and entrypoint to run scripts
 
 </details>
+
+<details>
+<summary><b>Docker-Compose</b></summary><br>
+
+Docker Compose is a tool that lets you define and run multi-container applications using a single configuration file.
+
+Instead of manually starting containers one by one with Docker commands, you describe everything in a YAML file (usually called docker-compose.yml) and then bring it all up together with one command.
+
+### Services
+
+This is where you define your containers (apps), Each one = 1 container:
+
+- nginx
+- wordpress
+- mariadb
+
+### Services
+
+</details>

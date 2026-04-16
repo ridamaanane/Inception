@@ -1,20 +1,22 @@
 FROM debian:bullseye
 
-RUN apt update && apt upgrade -y
+RUN apt-get update && apt-get install -y \
+    php \
+    php-fpm \
+    php-mysql \
+    default-mysql-client \
+    curl
 
-#We group this packages for faster and fewer layers in Docker and cleaner build
-RUN apt install -y php php-fpm php-mysql curl mariadb-client
+RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /etc/php/7.4/fpm/pool.d/www.conf
 
-RUN mkdir -p /var/www/html
+# download wp-cli
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+RUN chmod +x wp-cli.phar
+RUN mv wp-cli.phar /usr/local/bin/wp
 
-#after this line Every next command acts as if you are inside this path
-WORKDIR /var/www/html
-
-COPY entrypoint.sh /entrypoint.sh
-
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT  ["/entrypoint.sh"]
-#WHY ENTRYPOINT IS REQUIRED Because only at runtime: MariaDB exists, network exists, services can communicate
+COPY tools/script.sh /script.sh
+RUN chmod +x /script.sh
 
 EXPOSE 9000
+
+CMD ["/script.sh"]

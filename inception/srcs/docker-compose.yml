@@ -1,41 +1,42 @@
 services:
 
   nginx:
-    build: ./requirements/nginx/conf   # path to Dockerfile for nginx
-    container_name: nginx         # name of the container
+    build: ./requirements/nginx
+    container_name: nginx
     ports:
-      - "8443:443"               
+      - "443:443"
     depends_on:
       - wordpress
+    volumes:
+      - wordpress_data:/var/www/html
     networks:
-      - inception    #join the network
+      - inception  
+      
+  mariadb:
+    build: ./requirements/mariadb
+    container_name: mariadb
+    env_file: .env
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - inception
 
   wordpress:
     build: ./requirements/wordpress
-    container_name: wordpress       
+    container_name: wordpress
+    env_file: .env
     depends_on:
-      - mariadb                      
-    networks:
-      - inception                   
-    environment:
-      - MYSQL_DATABASE=wordpress
-      - MYSQL_USER=wp_user
-      - MYSQL_PASSWORD=wp_password
+      - mariadb
     volumes:
-      - /var/run/mysqld:/var/run/mysqld
-
-  mariadb:   
-    build: ./requirements/mariadb 
-    container_name: mariadb
+      - wordpress_data:/var/www/html
     networks:
       - inception
-    environment:
-      - MYSQL_ROOT_PASSWORD=root_password
-      - MYSQL_DATABASE=wordpress
-      - MYSQL_USER=wp_user
-      - MYSQL_PASSWORD=wp_password
-    
 
-networks:   # define networks section
-  inception: # name of the custom network
-    driver: bridge  # default docker network type (allows container communication) (Create a private network for containers to communicate internally)
+
+
+volumes:
+  mariadb_data:
+  wordpress_data:
+
+networks:
+  inception:
