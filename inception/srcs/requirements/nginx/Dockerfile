@@ -2,15 +2,16 @@ FROM debian:bullseye
 
 RUN apt-get update && apt-get install -y nginx openssl
 
-# create ssl cert
+# Create folder to store SSL files
 RUN mkdir -p /etc/nginx/ssl
 
 RUN openssl req -x509 -nodes -days 365 \
 -newkey rsa:2048 \
 -keyout /etc/nginx/ssl/inception.key \
 -out /etc/nginx/ssl/inception.crt \
--subj "/C=MA/ST=Casablanca/L=Casablanca/O=42/OU=1337/CN=localhost"
+-subj "/C=MA/ST=Marrakesh-Safi/L=Benguerir/O=42/OU=1337/CN=localhost"
 
+#by default nginx come with this path
 COPY conf/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 443
