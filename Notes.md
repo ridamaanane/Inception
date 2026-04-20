@@ -104,6 +104,13 @@ the daemon executes it.
 first 80 = your machine
 second 80 = container
 
+
+**NOTE :** once the container starts, `RUN` is no longer used
+
+Why?
+
+Because RUN is only for building the image, not running it, that's why we used scripts in runtime to install the rest of instructions
+
 **To see containers you running on docker**
 
 `docker ps -all`
@@ -180,6 +187,8 @@ It understands:
 `down` : shuts everything down 
 `-v` : Removes volumes
 
+It does NOT remove images by default — the Docker images themselves remain cached locally.
+
 ___
 
 **Difference between CMD and ENTRYPOINT**
@@ -199,6 +208,49 @@ and look for this
   "Running": true
 }
 ```
+
+___
+
+`docker compose up -d`
+
+* **Purpose:** Start containers in detached (background) mode.
+* **Behavior:**
+
+  1. Checks if the container exists:
+
+     * If yes → starts it.
+     * If no → creates and starts it.
+  2. Uses **existing images** unless `build:` says otherwise and the image doesn’t exist.
+* **Does not rebuild images** automatically.
+* **Good for:** Just starting your app when images are already built/pulled.
+
+This command Fast because:
+
+- It does not rebuild images.
+- It does not reinstall anything inside the container; it just starts containers from existing images.
+
+Think of it as “turning on a machine that’s already built.”
+
+If the image already exists (pulled or built previously), it just creates and starts the container. That’s why it’s almost instant.
+Result: You get running containers quickly, but any changes in Dockerfile or dependencies are ignored.
+
+
+**Key difference in simple terms between it and the prev cmd**
+
+| Command                     | Rebuild images? | Run containers in background?   |
+| --------------------------- | --------------- | ------------------------------- |
+| `docker compose up -d`      | ❌ No            | ✅ Yes                           |
+| `docker compose up --build` | ✅ Yes           | ❌ By default, unless `-d` added |
+
+Think of it like:
+
+* `up -d` → “Start my app quickly using what’s already built.”
+* `up --build` → “Make sure my images are up-to-date, then start my app.”
+
+**Important note for WordPress + MariaDB**:
+
+* If your `.env` changes (like DB credentials) but volumes already exist, **rebuilding the image won’t change the database**.
+* To reapply `.env` to MariaDB, you need to **remove the old volume** (`docker compose down -v`) before starting.
 
 </details>
 
@@ -519,11 +571,41 @@ Start nginx in frontend required for Docker (otherwise container stops)
 
 `daemon off:`  means “don’t run in background
 
-</details>
-
 
 ## Dockerfile of maridb
 
+`mariadb-server` : server here means,  program that runs in background and listens for requests
+
+Example:
+
+```js
+WordPress → asks → database server → returns data
+```
+
+`chown -R mysql:mysql /run/mysqld`
+
+* `chown` → change owner of files/folders
+* `-R` → recursive (apply to all files inside folder)
+* `mysql:mysql` →
+
+  * first `mysql` = user
+  * second `mysql` = group
+* `/run/mysqld` → folder used by MariaDB at runtime
+
+`/run/mysqld`
+
+* `/run` → Linux directory for temporary runtime files (cleared on reboot)
+* `/mysqld` → folder used by MariaDB
+
+It is a runtime directory used by MariaDB while running.
+
+It stores:
+
+* **PID file** → identifies the running MariaDB process
+* **socket file (`mysql.sock`)** → used for internal communication between applications and MariaDB
+
+
+</details>
 
 
 <details>
@@ -838,6 +920,356 @@ Combined:
 This is sent to PHP:
 
 > “execute THIS file”
+
+
+</details>
+
+<details>
+<summary><b>Script of wordpress</b></summary><br>
+
+`until mysql -h mariadb -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT VERSION();" > /dev/null 2>&1; do`
+
+`until ... do`
+-  repeat until command works
+
+while NOT condition → keep looping
+
+if everything okey (condition become true), we done
+
+`"SELECT VERSION();"` : this show the version of DB if it's work so the DB installed correctly
+
+_______
+
+`wp core download`
+
+This means:
+
+“Download the WordPress core files”
+
+What it actually does:
+
+It downloads:
+
+WordPress PHP files
+folders like:
+
+```c
+wp-admin/
+wp-includes/
+wp-content/
+```
+basically: full WordPress system
+_______
+
+`--allow-root`
+
+WordPress blocks root user by default
+
+**BUT in Docker:**
+
+- everything runs as root inside container, So we must allow it.
+
+_______
+
+we creates file with : `wp config create` using values we passed
+
+name of file : `wp-config.php`
+
+
+**How?**
+
+It generates a PHP config file like:
+
+```c
+define('DB_NAME', ...);
+define('DB_USER', ...);
+define('DB_PASSWORD', ...);
+```
+
+we need --dbhost=mariadb:3306 , to tells WordPress:
+
+```c
+DB host = mariadb container
+port = 3306
+```
+
+_______
+
+`wp core install`
+
+> means : “Initialize WordPress inside the database and create the admin site”
+
+**Step-by-step what happens**
+
+#### 1- Connects to database
+
+It reads `wp-config.php`:
+
+* DB name
+* user
+* password
+* host
+
+connects to MariaDB
+
+---
+
+#### 2- Creates database structure
+
+It creates tables like:
+
+* `wp_users`
+* `wp_posts`
+* `wp_options`
+* `wp_comments`
+
+now WordPress has storage
+
+---
+
+#### 3- three: Sets your website URL
+
+```bash id="u2k8m1"
+--url="$DOMAIN_NAME"
+```
+
+This defines:
+
+* your site address
+
+Example:
+
+```text id="x9d3p7"
+https://localhost
+http://mywebsite.com
+```
+
+WordPress uses it for:
+
+* links
+* redirects
+* admin panel URL
+
+---
+
+#### 4- Sets website title
+
+```bash id="v4n6q8"
+--title="inception"
+```
+
+This is your site name:
+
+* shown in browser tab
+* WordPress dashboard title
+
+---
+
+#### 5- Creates admin user
+
+```bash id="c7r2t5"
+--admin_user="$WP_ADMIN"
+```
+
+creates the main login account
+
+Example:
+
+```text id="m8k1z3"
+username: admin
+```
+
+---
+
+#### 6- Sets admin password
+
+```bash id="p0x9h4"
+--admin_password="$WP_ADMIN_PASSWORD"
+```
+
+password for admin login
+
+---
+
+#### 7- Sets admin email
+
+```bash id="n3s7w2"
+--admin_email="$WP_ADMIN_EMAIL"
+```
+
+used for:
+
+* recovery
+* notifications
+* WordPress alerts
+
+---
+
+#### 8- `--allow-root`
+
+allows running as root inside container
+
+Without it:
+:x: WP-CLI refuses to run
+
+_______
+
+`exec php-fpm7.4 -F`
+
+`exec` replaces the current process with another process
+
+Instead of:
+
+`bash (shell) → runs php-fpm`
+
+exec does:
+
+`bash is replaced by php-fpm`
+
+`-F` : run in foreground
+
+**What is the “main process”?**
+
+In a container:
+
+```c
+PID 1 = main process
+If PID 1 stops → container stops
+```
+
+**without exec?**
+
+If you do directly:
+
+php-fpm7.4 -F
+
+```c
+shell stays as PID 1
+php-fpm becomes a child process
+```
+
+
+**NOTE :**  Order of installing wp matters
+
+- WordPress CLI commands depend on previous steps being completed.
+
+Think of it like a chain:
+
+```c
+download → config → install
+Each step prepares something needed for the next.
+```
+
+(**if you remove it , the containers works but setuping of the website doesn't finish of setuping the wordpress**)
+
+</details>
+
+
+<details>
+<summary><b>.env file</b></summary><br>
+
+### `.env` + `$VARIABLE`
+
+* `.env` is a file that stores key-value pairs (e.g. `MYSQL_USER=admin`).
+* Docker Compose reads `.env` using `env_file` and injects them into containers as **environment variables**.
+* Inside containers, variables are accessed using `$VARIABLE` (e.g. `$MYSQL_USER`).
+* The script does NOT read `.env` directly — it reads values from the container environment.
+* Flow: `.env → docker-compose → environment variables → `$VARIABLE` in scripts`.
+
+`$VAR` means “replace with the value stored in environment”.
+
+
+
+### 1. How variables are set in the OS (Linux)
+
+In Linux, environment variables are stored inside a process using something like:
+
+```c id="a1"
+key=value
+```
+
+Example:
+
+```bash id="a2"
+export MYSQL_USER=admin
+```
+
+This tells the OS:
+
+* “attach this variable to the current process”
+
+
+#### 2. What Docker does AFTER docker-compose
+
+When you run:
+
+```bash id="a5"
+docker compose up
+```
+
+___
+
+#### Step 1: Compose reads config
+
+* reads `docker-compose.yml`
+* reads `.env`
+
+
+#### Step 2: Docker Engine creates container
+
+Docker creates a **Linux process (container)** using:
+
+* namespaces (isolation)
+* cgroups (resources)
+
+
+#### Step 3: Docker sets environment (IMPORTANT PART)
+
+Before starting your script, Docker calls something like:
+
+```c id="a6"
+setenv("MYSQL_USER", "admin");
+setenv("MYSQL_PASSWORD", "1234");
+```
+
+This is OS-level injection
+
+
+
+#### Step 4: container process starts
+
+Now Docker starts your entry process:
+
+```bash id="a7"
+bash script.sh
+```
+
+#### Step 5: Bash reads environment
+
+Inside bash:
+
+```bash id="a8"
+echo $MYSQL_USER
+```
+
+OS replaces it from process memory
+
+
+#### FULL FLOW
+
+```text id="flow"
+.env file
+   ↓
+docker compose reads it
+   ↓
+Docker Engine creates Linux container (process)
+   ↓
+Docker sets environment variables in process memory
+   ↓
+bash starts inside container
+   ↓
+$VAR is resolved from OS environment table
+```
 
 
 </details>
