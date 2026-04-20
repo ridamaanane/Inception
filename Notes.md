@@ -454,7 +454,7 @@ Docker uses something called:  **layers**
 
 Example :
 ```
-FROM debian:bullseye
+FROM debian:bookworm
 RUN apt update
 RUN apt install -y curl
 ```
