@@ -1114,7 +1114,7 @@ Without it:
 
 _______
 
-`exec php-fpm7.4 -F`
+`exec php-fpm8.2 -F`
 
 `exec` replaces the current process with another process
 
@@ -1141,7 +1141,7 @@ If PID 1 stops → container stops
 
 If you do directly:
 
-php-fpm7.4 -F
+php-fpm8.2 -F
 
 ```c
 shell stays as PID 1
