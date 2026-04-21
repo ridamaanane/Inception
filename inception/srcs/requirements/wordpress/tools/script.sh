@@ -30,4 +30,16 @@ wp core install \
 
 mkdir -p /run/php
 
+# install and activate Redis plugin
+cd /var/www/html
+wp plugin install redis-cache --activate --allow-root
+
+#-q quite mode (without showing the output)
+if ! grep -q "WP_REDIS_HOST" wp-config.php; then
+    echo "define('WP_REDIS_HOST', 'redis');" >> wp-config.php
+    echo "define('WP_REDIS_PORT', 6379);" >> wp-config.php
+    echo "define('WP_CACHE', true);" >> wp-config.php
+fi
+wp redis enable --allow-root
+
 exec php-fpm8.2 -F

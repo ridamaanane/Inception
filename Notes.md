@@ -1114,6 +1114,22 @@ Without it:
 
 _______
 
+`mkdir -p /run/php`
+
+This folder is used by PHP-FPM to store its socket file.
+
+* Folder for **PHP-FPM socket file**
+* Example: `/run/php/php8.2-fpm.sock`
+
+Used for communication between **Nginx** and PHP
+
+**Why create it?**
+
+* `/run` is temporary (may not exist in Docker)
+* If missing ❌ → PHP-FPM won’t start
+
+_______
+
 `exec php-fpm8.2 -F`
 
 `exec` replaces the current process with another process
