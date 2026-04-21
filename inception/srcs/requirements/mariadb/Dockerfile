@@ -2,8 +2,6 @@ FROM debian:bookworm
 
 RUN apt-get update && apt-get install -y mariadb-server
 
-# COPY my.cnf /etc/mysql/my.cnf / i removed my.cnf (useless)
-
 RUN mkdir -p /run/mysqld
 RUN chown -R mysql:mysql /run/mysqld
 

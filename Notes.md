@@ -1273,3 +1273,67 @@ $VAR is resolved from OS environment table
 
 
 </details>
+
+
+<details>
+<summary><b>Bonus</b></summary><br>
+
+
+<details>
+<summary><b>Redis</b></summary><br>
+
+### Redis
+
+* **Redis** = in-memory database (stores data in RAM → very fast)
+
+
+### Storage
+
+* Data is stored **in RAM (instant)**
+* Saving to disk is **NOT automatic**, it depends on config
+
+
+### Persistence modes
+
+1. **RAM only**
+
+   * No disk save
+   * Data lost if server stops ❌
+
+2. **RDB (Snapshot)**
+
+   * Saves data **periodically**
+   * Possible small data loss
+
+3. **AOF (Append Only File)**
+
+   * Saves every operation
+   * Safer (almost no data loss)
+
+
+## Dockerfile
+
+`CMD ["redis-server", "--bind", "0.0.0.0", "--protected-mode", "no"]`
+
+`redis-server` : starts Redis (main process)
+`--bind 0.0.0.0` : allows connections from other containers (WordPress)
+`--protected-mode no` :
+
+- Redis by default allows **only localhost connections** (protected mode ON).
+> localhost (127.0.0.1) ✔️ 
+
+> blocks everything else ❌
+- In Docker, WordPress connects from another container → not localhost.
+-  `--protected-mode no` disables this restriction so other containers can connect.
+
+Used because Redis is **internal (not exposed to internet)**, To prevent hackers from accessing Redis from outside (that's why we set no)
+
+- disables this protection
+
+- allows connections from:  **other containers (WordPress)**
+
+
+</details>
+
+</details>
+
