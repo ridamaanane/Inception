@@ -40,7 +40,11 @@ services:
     networks:
       - inception
 
-
+  adminer:
+    build: ./requirements/bonus/adminer
+    container_name: adminer
+    networks:
+      - inception
 
 
 volumes:
