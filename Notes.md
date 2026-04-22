@@ -1353,3 +1353,67 @@ Used because Redis is **internal (not exposed to internet)**, To prevent hackers
 
 </details>
 
+
+<details>
+<summary><b>Difference between mariadb-client and php-redis</b></summary><br>
+
+### What is mariadb-client really?
+
+It is just a **command-line tool**
+
+Used for:
+
+* testing DB manually
+* running SQL inside containers
+* scripts (like your entrypoint)
+
+Example:
+
+```bash id="sql1"
+mysql -u user -p -h mariadb
+```
+
+That’s it.
+
+---
+
+## What about php-redis?
+
+```text id="flow2"
+WordPress (PHP)
+   ↓
+php-redis extension
+   ↓
+Redis server
+```
+
+- php-redis is NOT a server
+- it is a **bridge inside PHP**
+
+---
+
+## FULL comparison
+
+## 🟡 MariaDB flow
+
+```text id="dbflow"
+Browser → PHP → MariaDB server
+```
+
+* PHP uses mysqli
+* mariadb-client is only for terminal usage
+
+---
+
+## 🟢 Redis flow
+
+```text id="redisflow"
+Browser → PHP → php-redis → Redis server
+```
+(php-redis invisible bridge inside PHP), we don't interact with it
+
+* php-redis = PHP extension
+* Redis = cache system (not main database)
+
+</details>
+

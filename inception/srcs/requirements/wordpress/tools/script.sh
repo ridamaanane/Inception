@@ -32,14 +32,18 @@ mkdir -p /run/php
 
 # install and activate Redis plugin
 cd /var/www/html
+#configure wp-config
+cp /wp-config.php .
+
+# install + activate plugin
 wp plugin install redis-cache --activate --allow-root
 
-#-q quite mode (without showing the output)
-if ! grep -q "WP_REDIS_HOST" wp-config.php; then
-    echo "define('WP_REDIS_HOST', 'redis');" >> wp-config.php
-    echo "define('WP_REDIS_PORT', 6379);" >> wp-config.php
-    echo "define('WP_CACHE', true);" >> wp-config.php
-fi
+# remove old broken cache file BEFORE enabling (Use Redis instead of normal database queries for caching (without this rm we can't access to the website))
+
+rm -f /var/www/html/wp-content/object-cache.php
+    
 wp redis enable --allow-root
+
+
 
 exec php-fpm8.2 -F

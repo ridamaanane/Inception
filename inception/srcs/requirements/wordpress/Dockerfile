@@ -4,7 +4,9 @@ RUN apt-get update && apt-get install -y \
     php-fpm \
     php-mysql \
     mariadb-client \
-    curl
+    curl \
+    php-redis \
+    redis-tools
 
 RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
 
@@ -16,6 +18,7 @@ RUN mv wp-cli.phar /usr/local/bin/wp
 
 COPY tools/script.sh /script.sh
 RUN chmod +x /script.sh
+COPY conf/wp-config.php /
 
 EXPOSE 9000
 

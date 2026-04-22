@@ -2,4 +2,8 @@ FROM debian:bookworm
 
 RUN apt-get update && apt-get install -y redis-server
 
-CMD ["redis-server", "--bind", "0.0.0.0", "--protected-mode", "no"]
+COPY /conf/redis.conf /etc/redis/
+
+EXPOSE 6379
+
+CMD ["redis-server", "/etc/redis/redis.conf"]
