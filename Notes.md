@@ -252,6 +252,15 @@ Think of it like:
 * If your `.env` changes (like DB credentials) but volumes already exist, **rebuilding the image won’t change the database**.
 * To reapply `.env` to MariaDB, you need to **remove the old volume** (`docker compose down -v`) before starting.
 
+
+___
+
+**To see exactly where is the problem of container**
+
+`docker compose logs adminer`
+
+**example :** adminer  | 2026/04/22 20:05:43 [emerg] 1#1: host not found in upstream "wordpress" in /etc/nginx/sites-enabled/adminer:22
+
 </details>
 
 <details>
@@ -1417,3 +1426,214 @@ Browser → PHP → php-redis → Redis server
 
 </details>
 
+<details>
+<summary><b>Aminer</b></summary><br>
+
+**We set inside the adminer the creadintals of .env file**
+
+the server name we means :
+
+- Server = machine running the database
+
+in out project :
+
+- MariaDB container = database server
+
+
+---
+
+**How we can reach the webserver we run by php inside container of adminer**
+
+In Adminer container:
+
+```bash
+php -S 0.0.0.0:8080
+```
+
+This means:
+
+```text
+“Start a web server listening on port 8080 inside the container”
+```
+
+
+**How NGINX connects to it**
+
+In your NGINX config:
+
+```nginx
+proxy_pass http://adminer:8080/;
+```
+
+**What happens here**
+
+1. NGINX sees request `/adminer`
+2. It sends it to:
+
+```text
+adminer:8080
+```
+
+- “adminer” = container name
+- “8080” = port where PHP server is listening
+
+**Why this works**
+
+Docker network gives:
+
+```text
+adminer → IP address of Adminer container
+```
+
+So internally:
+
+```text
+NGINX → (Docker network) → adminer:8080
+```
+
+---
+
+```text
+Browser (HTTPS 443)
+   ↓
+NGINX
+   ↓ proxy_pass
+Adminer container (php -S :8080)
+   ↓
+index.php (Adminer)
+```
+
+
+___
+
+## Dockerfile
+
+`CMD ["php", "-S", "0.0.0.0:8080"]` starts a **built-in PHP web server** inside the container.
+
+* `php` → run PHP
+* `-S` → start simple development web server
+* `0.0.0.0` → listen on all network interfaces (so Docker/NGINX can access it)
+* `8080` → port where Adminer is served
+
+
+**php -S** Yes it *is* a “server”, but not the same type as NGINX.
+
+
+**What it is**
+
+```text id="t1"
+php -S = built-in PHP development server
+```
+
+- So yes, it’s a server
+- but **very lightweight and limited**
+
+---
+
+**Difference vs NGINX**
+
+| Feature          | NGINX                 | PHP -S             |
+| ---------------- | --------------------- | ------------------ |
+| Type             | Production web server | Development server |
+| Speed            | High                  | Basic              |
+| Routing          | Yes (advanced)        | No real routing    |
+| HTTPS            | Yes                   | No                 |
+| Use in Inception | Main entrypoint       | Internal tool      |
+
+
+
+
+## config file of nginx-- what i added
+
+`location /adminer/`
+- If URL starts with /adminer/, handle it here
+
+`proxy_pass http://adminer:8080/;`
+
+Send request to Adminer container using Docker DNS name adminer
+
+- ✔ adminer = container name
+- ✔ 8080 = internal port
+
+`proxy_set_header Host $host;`
+
+Keep original domain
+
+- tells the adminer the request came from rmaanane.42.fr”
+
+Important for correct URL generation
+
+`proxy_set_header X-Real-IP $remote_addr;`
+
+- gives Adminer the real user IP
+
+
+**Simplify it with example:**
+
+You open:
+
+```text
+https://rmaanane.42.fr/adminer
+```
+
+Request goes like this:
+
+```text
+YOU → NGINX → Adminer
+```
+
+---
+
+**Problem**
+
+Adminer does NOT see you directly.
+
+It only sees:
+
+```text
+request coming from NGINX
+```
+
+**So what we do?**
+
+We tell NGINX:
+
+> “when you send request to Adminer, also send info about the real user”
+
+
+**the line we added with variables:**
+
+```nginx
+proxy_set_header Host $host;
+```
+
+means:
+
+```text
+Send the domain (rmaanane.42.fr) to Adminer
+```
+
+---
+
+```nginx
+proxy_set_header X-Real-IP $remote_addr;
+```
+
+means:
+
+```text
+Send user's IP to Adminer
+```
+
+**Where `$host` and `$remote_addr` come from?**
+
+- NGINX gets them from your request automatically (You don’t create them).
+
+
+</details>
+
+<details>
+<summary><b></b></summary><br>
+
+
+</details>

@@ -1,7 +1,7 @@
 services:
 
   nginx:
-    build: ./requirements/nginx
+    build: requirements/nginx
     container_name: nginx
     ports:
       - "443:443"
@@ -13,7 +13,7 @@ services:
       - inception  
       
   mariadb:
-    build: ./requirements/mariadb
+    build: requirements/mariadb
     container_name: mariadb
     env_file: .env
     volumes:
@@ -22,7 +22,7 @@ services:
       - inception
 
   wordpress:
-    build: ./requirements/wordpress
+    build: requirements/wordpress
     container_name: wordpress
     env_file: .env
     depends_on:
@@ -35,16 +35,29 @@ services:
 
 
   redis:
-    build: ./requirements/bonus/redis
+    build: requirements/bonus/redis
     container_name: redis
     networks:
       - inception
 
   adminer:
-    build: ./requirements/bonus/adminer
+    build: requirements/bonus/adminer
     container_name: adminer
     networks:
       - inception
+
+  ftp:
+    build: requirements/bonus/ftp
+    container_name: ftp
+    ports:
+      - "21:21"
+      - "30000-31000:30000-31000"
+    env_file: .env
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - inception
+    restart: always 
 
 
 volumes:
