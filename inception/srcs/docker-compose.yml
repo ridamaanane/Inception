@@ -49,20 +49,36 @@ services:
   ftp:
     build: requirements/bonus/ftp
     container_name: ftp
+    env_file: .env
     ports:
       - "21:21"
-      - "30000-31000:30000-31000"
-    env_file: .env
+      - "21000-21010:21000-21010"
     volumes:
       - wordpress_data:/var/www/html
     networks:
       - inception
-    restart: always 
 
+#port 21 to connect with ftp in terminal
+#ports 21000-21010 are used for file transfer , 11 ports randomly is enough , bcs if we need to open multiple tabs or upload multiple files
+
+  static-website:
+    build: requirements/bonus/static-website
+    container_name: static-website
+    volumes:
+      - static-website:/var/www/html
+    networks:
+      - inception
+
+  backup-db:
+    build: requirements/bonus/backup-db
+    container_name: backup-db
+    networks:
+      - inception
 
 volumes:
   mariadb_data:
   wordpress_data:
+  static-website:
 
 networks:
   inception:

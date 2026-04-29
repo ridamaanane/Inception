@@ -1633,7 +1633,187 @@ Send user's IP to Adminer
 </details>
 
 <details>
-<summary><b></b></summary><br>
+<summary><b>Ftp</b></summary><br>
+
+WordPress container ──────► /var/www/html ◄────── FTP container
+         │                         │                      │
+         └──────── wordpress_data (shared volume) ────────┘
+
+
+**after finishing the setup we test with this:**
+
+**step 0:** you need to install ftp , to connect with your localhost 
+
+**step 1:** you need to create the file inside ur host 
+
+**step 2:** upload the file
+
+`curl -u rmaanane:password -T test.php ftp://localhost/`
+
+this upload file using ftp service (so the file now inside the shared file of wordpress)
+
+* `curl` → send request tool
+* `-u user:pass` → login to FTP
+* `-T test.php` → upload this file
+* `ftp://localhost/` → FTP server on your machine (port 21)
+
+
+
+**Note:** You need to use file of php extension because txt doesn't work on nginx (block them by default)
+
+**step 3:** access the file from the browser
+
+----
+
+## config file of ftp
+
+`umask` = “automatic permission filter for new files”
+
+When a file is created, Linux does:
+
+```text id="u1"
+final_permission = default_permission - umask
+```
+
+**Why it matters**
+
+Because files are NOT created manually with `chmod`.
+
+They are created by:
+
+* FTP upload
+* PHP (WordPress)
+* system processes
+* scripts
+
+**Example without umask control**
+
+FTP uploads file → system default applies:
+
+```text id="u2"
+666 - 077 = 600
+```
+
+Result:
+
+```text id="u3"
+rw------- ❌ (website breaks)
+```
+
+---
+
+**Example with `umask=022`**
+
+```text id="u4"
+666 - 022 = 644 ✔
+```
+
+Result:
+
+```text id="u5"
+rw-r--r-- ✔ (website works)
+```
+
+---
+
+## Dockerfile
+
+```bash id="u1"
+RUN useradd -m -d /var/www/html -s /bin/bash rmaanane && \
+    echo "rmaanane:password" | chpasswd
+```
+
+1. `useradd -m -d /var/www/html -s /bin/bash rmaanane`
+
+creates a user:**
+
+* `rmaanane` → username
+* `-m` → create home folder
+* `-d /var/www/html` → home is WordPress folder
+* `-s /bin/bash` → allow login shell
+
+**why we used the shell**
+
+- allows normal login ✔
+- user can execute commands ✔
+- avoids login issues ✔
+
+---
+
+2. `echo "rmaanane:password" | chpasswd`
+
+sets password:
+
+* user = rmaanane
+* password = password
+
+---
+
+## docker compose
+
+- **port 21** to connect with ftp in terminal
+- **ports 21000-21010** are used for file transfer , 11 ports randomly is enough , bcs if we need to open multiple tabs or upload multiple files
+
+**LEFT** : your machine (host)
+
+**RIGHT**: container (FTP server)
+
+- host ports → container ports
+
+1. What if `/var/www/html` doesn’t exist?
+
+- Docker will **create it automatically** inside the container ✔
+
+BUT in your case:
+
+```yaml
+volumes:
+  - wordpress_data:/var/www/html
+```
+
+this volume is **shared with WordPress**
+
+So:
+
+```text
+WordPress creates files → FTP sees them
+FTP uploads files → WordPress sees them
+```
+
+2. Which container runs first?
+
+By default:
+
+```text
+Docker Compose does NOT guarantee order ❌
+```
+
+Containers start **almost at the same time**
+
+**Important**
+
+This does NOT matter for FTP
+
+Because:
+
+```text
+FTP does NOT depend on WordPress ❌
+it only uses the volume ✔
+```
+
+3. What if WordPress is not ready yet?
+
+No problem:
+
+* volume exists ✔
+* folder exists ✔
+* FTP still runs ✔
+
+Later:
+
+```text
+WordPress fills the folder
+```
 
 
 </details>

@@ -6,9 +6,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY conf/vsftpd.conf /etc/vsftpd.conf
 
-RUN useradd -m -d /var/www/html -s /bin/bash rmaanane && \
-    echo "rmaanane:password" | chpasswd
+COPY tools/script.sh /script.sh
+RUN chmod +x /script.sh
 
-EXPOSE 21
-
-CMD ["vsftpd", "/etc/vsftpd.conf"]
+CMD ["/script.sh"]
