@@ -9,19 +9,26 @@ mysqld --user=mysql --bind-address=0.0.0.0 &
 #give MariaDB time to start
 sleep 5
 
-#Set root password, alter means change root password only for local root account (host = only local machine (inside container))
-mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';"
 
-#Create database
-mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "CREATE DATABASE ${MYSQL_DATABASE};"
+if ! mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "USE ${MYSQL_DATABASE};" 2>/dev/null; then
+    echo "Initializing database..."
 
-#Create user, '%' = allow connection from anywhere
-mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "CREATE USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';"
+    #Set root password, alter means change root password only for local root account (host =  only local machine (inside container db))
+    mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';" 
+    
+    #Create database
+    mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "CREATE DATABASE ${MYSQL_DATABASE};"
 
-#allow user to fully control the DB
-mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';"
+    #Create user, '%' = allow connection from anywhere
+    mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "CREATE USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';"
 
-#stop temporary DB
+    #allow user to fully control the DB
+    mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';"
+fi
+
+
+
+#stop temporary DB, (we need to restart it)
 mysqladmin -u root -p${MYSQL_ROOT_PASSWORD} shutdown
 
 exec mysqld --user=mysql --bind-address=0.0.0.0

@@ -242,10 +242,18 @@ Result: You get running containers quickly, but any changes in Dockerfile or dep
 | `docker compose up -d`      | ❌ No            | ✅ Yes                           |
 | `docker compose up --build` | ✅ Yes           | ❌ By default, unless `-d` added |
 
-Think of it like:
+`docker compose up -d`
 
-* `up -d` → “Start my app quickly using what’s already built.”
-* `up --build` → “Make sure my images are up-to-date, then start my app.”
+- starts containers in detached mode
+- uses existing images if available
+- does NOT rebuild Dockerfiles automatically
+
+`docker compose up --build -d`
+
+- rebuilds images from the Dockerfiles first
+- then starts containers in detached mode
+- useful when you changed Dockerfile or source code used in the image
+
 
 **Important note for WordPress + MariaDB**:
 
@@ -260,6 +268,21 @@ ___
 `docker compose logs adminer`
 
 **example :** adminer  | 2026/04/22 20:05:43 [emerg] 1#1: host not found in upstream "wordpress" in /etc/nginx/sites-enabled/adminer:22
+
+
+___
+
+**volumes:**
+
+for example mariadb :
+
+```c
+  mariadb_data: # volume name
+    driver_opts: #don’t use default storage, I want custom behavior
+      type: none #no special filesystem , just use a normal directory
+      device: /home/rmaanane/data/mariadb #store the data here on the HOST
+      o: bind #connect this folder directly to Docker, means (use my folder, not yours, that why it stores in my path)
+```
 
 </details>
 

@@ -10,7 +10,8 @@ services:
     volumes:
       - wordpress_data:/var/www/html
     networks:
-      - inception  
+      - inception
+    restart: always
       
   mariadb:
     build: requirements/mariadb
@@ -20,6 +21,7 @@ services:
       - mariadb_data:/var/lib/mysql
     networks:
       - inception
+    restart: always
 
   wordpress:
     build: requirements/wordpress
@@ -32,6 +34,7 @@ services:
       - wordpress_data:/var/www/html
     networks:
       - inception
+    restart: always
 
 
   redis:
@@ -39,12 +42,14 @@ services:
     container_name: redis
     networks:
       - inception
+    restart: always
 
   adminer:
     build: requirements/bonus/adminer
     container_name: adminer
     networks:
       - inception
+    restart: always
 
   ftp:
     build: requirements/bonus/ftp
@@ -57,6 +62,7 @@ services:
       - wordpress_data:/var/www/html
     networks:
       - inception
+    restart: always
 
 #port 21 to connect with ftp in terminal
 #ports 21000-21010 are used for file transfer , 11 ports randomly is enough , bcs if we need to open multiple tabs or upload multiple files
@@ -68,16 +74,28 @@ services:
       - static-website:/var/www/html
     networks:
       - inception
+    restart: always
 
   backup-db:
     build: requirements/bonus/backup-db
     container_name: backup-db
     networks:
       - inception
+    restart: always
 
 volumes:
   mariadb_data:
+    driver_opts:
+      type: none
+      device: /home/rmaanane/data/mariadb
+      o: bind
+
   wordpress_data:
+    driver_opts:
+      type: none
+      device: /home/rmaanane/data/wordpress
+      o: bind
+
   static-website:
 
 networks:
