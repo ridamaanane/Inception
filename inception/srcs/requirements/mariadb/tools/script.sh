@@ -1,19 +1,14 @@
 #!/bin/bash
 
 mysqld --user=mysql --bind-address=0.0.0.0 &
-# mysqld → starts MariaDB server
-# --user=mysql → runs as mysql user (not root)
-# --bind-address=0.0.0.0 → accept connections from anywhere
-# & → run in background
 
-#give MariaDB time to start
+
 sleep 5
 
 
 if ! mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "USE ${MYSQL_DATABASE};" 2>/dev/null; then
     echo "Initializing database..."
 
-    #Set root password, alter means change root password only for local root account (host =  only local machine (inside container db))
     mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';" 
     
     #Create database
@@ -27,9 +22,7 @@ if ! mysql -u root -p${MYSQL_ROOT_PASSWORD} -e "USE ${MYSQL_DATABASE};" 2>/dev/n
 fi
 
 
-
 #stop temporary DB, (we need to restart it)
 mysqladmin -u root -p${MYSQL_ROOT_PASSWORD} shutdown
 
 exec mysqld --user=mysql --bind-address=0.0.0.0
-#exec runs MariaDB in foreground , because before we run it in background that why we stop it and run it in foregound

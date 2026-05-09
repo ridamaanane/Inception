@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     php-redis \
     redis-tools
+#redis-tools (cli)
 
 RUN sed -i 's|listen = .*|listen = 0.0.0.0:9000|' /etc/php/8.2/fpm/pool.d/www.conf
 

@@ -9,6 +9,7 @@ setup:
 	@echo "Setting up data directories..."
 	@mkdir -p /home/rmaanane/data/mariadb
 	@mkdir -p /home/rmaanane/data/wordpress
+	@sudo chown -R rmaanane:rmaanane /home/rmaanane/data/wordpress
 
 build: setup
 	@echo "Building Docker images..."

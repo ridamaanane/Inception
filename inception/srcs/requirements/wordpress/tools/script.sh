@@ -3,12 +3,12 @@
 mkdir -p /var/www/html
 cd /var/www/html
 
-# Wait for mariadb to be ready
 until mysql -h mariadb -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT VERSION();" > /dev/null; do
     echo "Waiting for mariadb..."
     sleep 2
 done
 
+#Downloads WordPress files only (wp-admin/ wp-content/ wp-includes/)
 wp core download --allow-root
 
 # creates file of wp-config.php
@@ -28,14 +28,14 @@ wp core install \
     --admin_email="$WP_ADMIN_EMAIL" \
     --allow-root
 
-mkdir -p /run/php
+# used by PHP-FPM for runtime files
+mkdir -p /run/php 
 
-# install and activate Redis plugin
 cd /var/www/html
 #configure wp-config
 cp /wp-config.php .
 
-# install + activate plugin
+# install Redis + activate plugin
 wp plugin install redis-cache --activate --allow-root
 
 # remove old broken cache file BEFORE enabling (Use Redis instead of normal database queries for caching (without this rm we can't access to the website))
@@ -43,7 +43,5 @@ wp plugin install redis-cache --activate --allow-root
 rm -f /var/www/html/wp-content/object-cache.php
     
 wp redis enable --allow-root
-
-
 
 exec php-fpm8.2 -F
