@@ -72,8 +72,41 @@ Without this  ---> encrypted connection cannot start
 <details>
 <summary><b>About the dockerfile of nginx - and the lines we set to install the certificate</b></summary><br>
 
-What we do here , to enables HTTPS (port 443)
+NGINX is commonly used as a **reverse proxy**.
 
+## What is a proxy?
+
+A proxy = middle server between:
+
+* client
+* another server
+
+## 🔹 Reverse proxy meaning
+
+Instead of client talking directly to backend:
+
+```text id="r1"
+Client → Backend
+```
+
+it becomes:
+
+```text id="r2"
+Client → NGINX → Backend
+```
+
+NGINX receives request first,
+then forwards it to:
+
+* PHP-FPM
+* WordPress
+* Node.js
+* etc.
+
+---
+
+
+What we do here , to enables HTTPS (port 443)
 
 `openssl req -x509 -nodes -days 365 \`
 
