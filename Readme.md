@@ -931,6 +931,11 @@ Meaning:
 * `new` → replacement
 * `-i` → Edit files in-place (overwrites the original file).
 
+you can also add `g` means 
+
+`g` → global , not Only the first match in the line changes, it change the whole file
+
+
 </details>
 
 
@@ -1400,8 +1405,29 @@ WordPress container ──────► /var/www/html ◄────── FT
 
 **step 2:** upload the file
 
-`curl -u rmaanane:password -T test.php ftp://rmaanane.42.fr/`
+before upload the file you need to run
 
+`sudo chown -R rmaanane:rmaanane /home/rmaanane/data/wordpress`
+
+- Because host bind mounts use HOST filesystem permissions.
+
+So if your FTP or Docker interacts with:
+
+`/home/rmaanane/data`
+
+Linux checks:
+
+- who owns folder
+- who can write
+
+If owner is your user:
+
+- ✔️ easier access
+- ✔️ no permission problems
+
+**then run this**
+
+`curl -u rmaanane:password -T test.php ftp://rmaanane.42.fr/`
 
 this upload file using ftp service (so the file now inside the shared file of wordpress)
 
@@ -1409,7 +1435,6 @@ this upload file using ftp service (so the file now inside the shared file of wo
 * `-u user:pass` → login to FTP
 * `-T test.php` → upload this file
 * `ftp://localhost/` → FTP server on your machine (port 21)
-
 
 
 **Note:** You need to use file of php extension because txt doesn't work on nginx (block them by default)

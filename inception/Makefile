@@ -2,16 +2,21 @@ COMPOSE_DIR=srcs
 COMPOSE_FILE=$(COMPOSE_DIR)/docker-compose.yml
 DC=docker compose -f $(COMPOSE_FILE)
 
-all: build
+all: update_hosts setup build 
+
+update_hosts:
+	@if grep "localhost" /etc/hosts; then \
+		sudo sed -i 's/localhost/rmaanane.42.fr/g' /etc/hosts; \
+	fi
 
 # Create data directories
 setup:
 	@echo "Setting up data directories..."
-	@mkdir -p /home/rmaanane/data/mariadb
-	@mkdir -p /home/rmaanane/data/wordpress
-	@sudo chown -R rmaanane:rmaanane /home/rmaanane/data/wordpress
+	@mkdir -p $(HOME)/data/mariadb
+	@mkdir -p $(HOME)/data/wordpress
+	@sudo chown -R rmaanane:rmaanane $(HOME)/data/wordpress
 
-build: setup
+build:
 	@echo "Building Docker images..."
 	$(DC) up --build -d
 
@@ -37,6 +42,7 @@ clean: down
 
 fclean: clean
 	@echo "Removing volumes and data..."
+	@sudo rm -rf $(HOME)/data/
 	$(DC) down -v --remove-orphans
 
-.PHONY: all up build setup down restart logs status clean fclean
+.PHONY: all update_hosts setup build up down restart logs status clean fclean
