@@ -2,8 +2,7 @@ FROM debian:bookworm
 
 RUN apt-get update && apt-get install -y redis-server
 
-COPY /conf/redis.conf /etc/redis/
-
 EXPOSE 6379
 
-CMD ["redis-server", "/etc/redis/redis.conf"]
+CMD ["redis-server", "--bind", "0.0.0.0", "--protected-mode", "no"]
+# Docker containers need to communicate,that's why we disable protection

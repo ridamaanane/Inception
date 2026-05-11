@@ -18,7 +18,7 @@ setup:
 
 build:
 	@echo "Building Docker images..."
-	$(DC) up --build -d
+	$(DC) up --build
 
 
 up:

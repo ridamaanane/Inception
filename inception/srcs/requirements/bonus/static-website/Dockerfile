@@ -1,13 +1,9 @@
 FROM debian:bookworm
 
-RUN apt-get update && apt-get install -y \
-    php
+RUN apt-get update && apt-get install -y nginx
 
-WORKDIR /var/www/html
+COPY tools/index.html /var/www/html/
+COPY tools/style.css /var/www/html/
+COPY tools/rmaanane.jpg /var/www/html/
 
-COPY tools/index.html .
-COPY tools/style.css .
-COPY tools/rmaanane.jpg .
-
-
-CMD ["php", "-S", "0.0.0.0:69"]
+CMD ["nginx", "-g", "daemon off;"]

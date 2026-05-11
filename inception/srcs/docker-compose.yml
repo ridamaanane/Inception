@@ -70,18 +70,16 @@ services:
   static-website:
     build: requirements/bonus/static-website
     container_name: static-website
-    volumes:
-      - static-website:/var/www/html
     networks:
       - inception
     restart: always
 
-  backup-db:
-    build: requirements/bonus/backup-db
-    container_name: backup-db
-    networks:
-      - inception
-    restart: always
+  # backup-db:
+  #   build: requirements/bonus/backup-db
+  #   container_name: backup-db
+  #   networks:
+  #     - inception
+  #   restart: always
 
 volumes:
   mariadb_data:
@@ -95,8 +93,6 @@ volumes:
       type: none
       device: /home/rmaanane/data/wordpress
       o: bind
-
-  static-website:
 
 networks:
   inception:
