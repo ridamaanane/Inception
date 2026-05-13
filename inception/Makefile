@@ -2,7 +2,8 @@ COMPOSE_DIR=srcs
 COMPOSE_FILE=$(COMPOSE_DIR)/docker-compose.yml
 DC=docker compose -f $(COMPOSE_FILE)
 
-all: update_hosts setup build 
+
+all: update_hosts setup build setup2
 
 update_hosts:
 	@if grep "localhost" /etc/hosts; then \
@@ -14,11 +15,13 @@ setup:
 	@echo "Setting up data directories..."
 	@mkdir -p $(HOME)/data/mariadb
 	@mkdir -p $(HOME)/data/wordpress
-	@sudo chown -R rmaanane:rmaanane $(HOME)/data/wordpress
+
+setup2:
+	@sudo chown -R $(USER):$(USER) $$HOME/data/wordpress
 
 build:
 	@echo "Building Docker images..."
-	$(DC) up --build
+	$(DC) up --build -d
 
 
 up:
@@ -45,4 +48,4 @@ fclean: clean
 	@sudo rm -rf $(HOME)/data/
 	$(DC) down -v --remove-orphans
 
-.PHONY: all update_hosts setup build up down restart logs status clean fclean
+.PHONY: all update_hosts setup setup2 build up down restart logs status clean fclean

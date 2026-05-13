@@ -42,7 +42,6 @@ AI was used to assist with:
 - Script debugging and error resolution
 - Documentation structure and content generation
 - Code review and improvement suggestions
-- Troubleshooting common Docker deployment issues
 
 ## Project Description
 
