@@ -220,7 +220,7 @@ No manual user configuration is required.
 
 ## Database Backup Service
 
-The backup service is used to automatically create backups of the MariaDB database.
+The backup service is used to automatically create backups of the MariaDB database every 5 minutes.
 
 This helps:
 - protect database data

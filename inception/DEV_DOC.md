@@ -368,23 +368,25 @@ The project includes optional bonus services that extend core functionality. All
   ```
 
 #### 4. **Backup Service** (Database Backup Automation)
-- **Purpose**: Automatically backup MariaDB database at scheduled intervals
-- **Backup Location**: Stored in volume `srcs_backup_data` (host: `/home/rmaanane/data/backup/`)
-- **Backup Script**: `srcs/requirements/bonus/backup-db/tools/script.sh`
-- **Backup Frequency**: Configured based on your scheduling needs
+
+- **Purpose**: Automatically backs up the MariaDB databases every 5 minutes using `mysqldump` and cron jobs.
+- **Backup Location**: Backup files are stored inside the `backup-db` directory in the container with the filename `alldb.sql`.
+- **Backup Script**: `srcs/requirements/bonus/backup-db/tools/backup.sh`
+
 - **Features**:
-  - Automatic scheduled backups
-  - Compressed backup files
-  - Timestamped filenames
-  - Rotates old backups to manage storage
-- **Restore from Backup**:
+  - Automatic scheduled backups using cron
+  - Database backup using `mysqldump`
+  - Uses the Docker network to connect to the MariaDB service
+
   ```bash
-  # List available backups
-  ls -la /home/rmaanane/data/backup/
-  
-  # Restore specific backup
-  docker compose exec mariadb mysql -u "$MYSQL_USER" -p "$MYSQL_DATABASE" < backup_file.sql
-  ```
+  # Restore a backup
+
+  # 1. Copy the backup file from the container to the host
+  docker cp backup-db:/backup-db/alldb.sql .
+
+  # 2. Restore the backup into MariaDB
+  docker compose exec -T mariadb mysql -u MYSQL_USER -pMYSQL_PASSWORD MYSQL_DATABASE < alldb.sql
+
 
 #### 5. **Static Website** (Additional Web Content)
 - **Purpose**: Serve static HTML/CSS website alongside WordPress
@@ -410,12 +412,7 @@ The project includes optional bonus services that extend core functionality. All
 
 #### Disable Specific Bonus Services
 1. Comment out unwanted services in `srcs/docker-compose.yml`
-2. Remove their volumes if not needed:
-   ```bash
-   docker volume rm srcs_redis_data
-   docker volume rm srcs_backup_data
-   ```
-3. Rebuild:
+2. Rebuild:
    ```bash
    docker compose up --build -d
    ```
@@ -475,7 +472,29 @@ ls -la /home/rmaanane/data/backup/
 
 # Check available disk space
 df -h /home/rmaanane/data/
+
+# Enter the backup container
+docker compose exec backup-db bash
+
+# Verify that cron is running
+ps aux | grep cron
+
+# Check registered cron jobs
+crontab -l
+
+# Verify backup script permissions
+ls -la /backup-db/backup.sh
+
+# Test backup script manually
+/bin/bash /backup-db/backup.sh
+
+# Verify backup file creation
+ls -la /backup-db/
+
+# Check mysqldump errors
+cat /tmp/mysqldump-error.log
 ```
+
 
 #### Adminer Connection Failed
 ```bash

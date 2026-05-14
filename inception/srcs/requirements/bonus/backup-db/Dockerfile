@@ -13,8 +13,8 @@ COPY tools/backup.sh .
 RUN chmod +x backup.sh && \
     touch backup-cron
 
-# backup every 10 minutes
-RUN echo "* * * * * /bin/bash /backup-db/backup.sh" > backup-cron && \
+# backup every 5 minutes
+RUN echo "*/5 * * * * /backup-db/backup.sh" > backup-cron && \
     mv backup-cron /etc/cron.d && \
     crontab /etc/cron.d/backup-cron
 

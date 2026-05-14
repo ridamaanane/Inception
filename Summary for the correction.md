@@ -172,3 +172,63 @@ So:
 
 ---
 
+# what is “host” in docker concept?
+
+Normally on real networks:
+
+* a host = machine/computer/server
+
+Example:
+
+```txt id="x2"
+google.com
+```
+
+is a hostname.
+
+DNS converts:
+
+```txt id="x3"
+google.com → IP address
+```
+
+## Docker does SAME idea internally
+
+When you create:
+
+```yaml id="x4"
+services:
+  mariadb:
+```
+
+Docker automatically creates:
+
+* hostname = `mariadb`
+* internal IP for container
+
+Example internally:
+
+```txt id="x5"
+mariadb → 172.18.0.2
+```
+
+## when backup container runs:
+
+```bash id="x6"
+mysqldump -h mariadb
+```
+
+Docker says:
+
+```txt id="x7"
+"Oh, mariadb is this container IP"
+```
+
+then connects to it.
+
+* service name becomes hostname
+
+NOT necessarily `container_name`.
+
+---
+
