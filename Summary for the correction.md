@@ -94,3 +94,81 @@ Stack = your full Docker setup started with docker-compose
 
 ---
 
+# Docker network
+
+is A virtual network that allows containers to communicate with each other.
+
+in Docker Compose you can create:
+
+- 1 network
+- 2 networks
+- many networks
+
+There is no limit conceptually.
+
+## What is bridge ?
+
+- bridge is the default Docker network driver.
+
+It creates:
+
+a private internal virtual network between containers.
+
+Containers connected to the same bridge network can:
+
+- communicate using service names
+- stay isolated from other networks
+
+## Why NOT host in Inception ?
+
+host means:
+
+- container shares your machine network directly
+
+This breaks:
+
+- isolation
+- Docker abstraction
+
+And the subject forbids it.
+
+```bash
+container
+   ↓
+same network stack as host
+   ↓
+host machine
+   ↓
+internet
+```
+
+## Why bridge is safer
+
+Because:
+
+- containers separated from host
+- avoids conflicts
+- more secure
+- better isolation
+
+That’s why Inception forbids host.
+
+```bash
+container
+   ↓
+bridge network
+   ↓
+docker
+   ↓
+host machine
+   ↓
+internet
+```
+
+So:
+
+- container does NOT directly use host network
+- Docker translates/routes traffic
+
+---
+
