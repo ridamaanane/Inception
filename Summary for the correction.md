@@ -232,3 +232,117 @@ NOT necessarily `container_name`.
 
 ---
 
+# `.env` file
+
+* Stores environment variables and credentials (database user, password, domain, etc.).
+* Docker Compose reads the `.env` file when running `docker compose up`.
+* Variables are injected into containers during container creation/startup.
+* If `.env` changes, containers must be restarted or rebuilt to apply new values.
+
+---
+
+# Docker Layers
+
+* Docker builds images using layers.
+* Instructions like `RUN`, `COPY`, and `ADD` create layers.
+* Layers are stacked on top of a base image.
+* Docker reuses unchanged layers from cache to speed up rebuilds and reduce disk usage.
+
+**Example:**
+
+```bash
+Layer 1 → debian base image
+Layer 2 → apt update
+Layer 3 → nginx installation
+Layer 4 → copied files
+```
+
+**Note:** Docker image layers are created in order, instruction by instruction from top to bottom in the Dockerfile.
+
+---
+
+# in Docker Compose:
+
+* services can start almost simultaneously (in parallel).
+* one service may become ready before another.
+
+So:
+
+```txt id="ord2"
+wordpress may start before mariadb is ready
+```
+
+even if `depends_on` exists.
+
+
+Almost, but not exactly.
+
+In Docker Compose:
+
+```yaml
+depends_on:
+  - mariadb
+```
+
+means:
+
+> Start the `mariadb` container BEFORE the other container.
+
+BUT it does **NOT** mean:
+
+> Wait until MariaDB is fully ready to accept connections.
+
+## What actually happens
+
+Example:
+
+```txt id="dep1"
+1. Docker starts mariadb container
+2. Immediately after, Docker starts wordpress container
+```
+
+But MariaDB may still be:
+
+* initializing database
+* creating users
+* loading files
+
+So WordPress may try connecting TOO EARLY.
+
+
+## Important distinction
+
+## `depends_on`
+
+✔ controls start order
+
+## `depends_on`
+
+❌ does NOT guarantee readiness
+
+## Real example
+
+MariaDB container:
+
+```txt id="dep2"
+starting...
+loading...
+creating database...
+```
+
+At same time:
+
+```txt id="dep3"
+wordpress tries connecting
+```
+
+If DB not ready yet:
+
+```txt id="dep4"
+connection refused
+```
+---
+
+
+
+
