@@ -1,4 +1,562 @@
 <details>
+<summary><b>Docker containers and virtual machines solve isolation differently</b></summary><br>
+
+# Virtual Machines (Hypervisor)
+
+A VM has:
+
+* Physical hardware
+* Hypervisor
+* Guest OS
+* Applications
+
+Each VM runs its **own kernel**, which is why VMs consume more RAM and CPU overhead.
+
+```
+Hardware
+   |
+Hypervisor
+   |
++-------+  +-------+
+| VM 1  |  | VM 2  |
+|Kernel |  |Kernel |
++-------+  +-------+
+```
+
+## Where is the Hypervisor?
+
+There are two types.
+
+### Type 1 (Bare Metal)
+
+Examples:
+
+* VMware ESXi
+* Microsoft Hyper-V
+* Xen
+
+```text
+Hardware
+   ↓
+Hypervisor
+   ↓
+VM1  VM2  VM3
+```
+
+The hypervisor runs **directly on the hardware**.
+
+It is loaded after the BIOS/UEFI boot process.
+
+So it is **not inside a VM**.
+
+---
+
+### Type 2 (Hosted)
+
+Examples:
+
+* VirtualBox
+* VMware Workstation
+
+```text
+Hardware
+   ↓
+Host OS
+   ↓
+Hypervisor
+   ↓
+VMs
+```
+
+The hypervisor is just a program running on the host OS.
+
+---
+
+# Docker Containers
+
+Containers **share the host kernel**.
+
+```
+Hardware
+   |
+Host OS Kernel
+   |
++-----------+ +-----------+
+|Container 1| |Container 2|
+|App + Libs | |App + Libs |
++-----------+ +-----------+
+```
+
+A container is not a VM. It is just a process (or group of processes) running on the host kernel with extra isolation mechanisms.
+
+---
+
+## How does Docker isolate containers?
+
+Docker mainly relies on Linux features:
+
+### 1. Namespaces (Isolation)
+
+Namespaces make a process think it has its own environment.
+
+Examples:
+
+| Namespace | Isolates           |
+| --------- | ------------------ |
+| PID       | Process IDs        |
+| NET       | Network interfaces |
+| MNT       | Filesystem mounts  |
+| UTS       | Hostname           |
+| IPC       | Shared memory      |
+| USER      | User IDs           |
+
+For example:
+
+Container A sees:
+
+```bash
+PID 1 nginx
+PID 2 worker
+```
+
+Container B also sees:
+
+```bash
+PID 1 mysql
+PID 2 helper
+```
+
+Both have a PID 1 because they are in different PID namespaces.
+
+---
+
+### 2. Cgroups (Resource Management)
+
+Linux **Control Groups (cgroups)** tell the kernel:
+
+* How much RAM a container can use
+* How much CPU time it can consume
+* How much disk I/O it gets
+* How many processes it may create
+
+Docker creates cgroup rules like:
+
+```
+Container A
+RAM <= 512 MB
+CPU <= 1 core
+```
+
+The kernel continuously enforces these limits.
+
+---
+
+## CPU Reservation
+
+Suppose:
+
+* Machine = 8 CPUs
+* Container A = 2 CPUs
+* Container B = 1 CPU
+* Container C = unlimited
+
+Docker configures cgroups.
+
+The Linux scheduler then decides:
+
+```
+CPU time
+├─ A gets up to 2 CPUs
+├─ B gets up to 1 CPU
+└─ C gets the remaining time
+```
+---
+
+## RAM Reservation
+
+Example:
+
+```bash
+docker run --memory=1g ubuntu
+```
+
+Docker creates a memory cgroup.
+
+Kernel tracks every page allocated by processes inside that container.
+
+```
+Container Memory Usage
+Current: 700 MB
+Limit:   1024 MB
+```
+
+If usage exceeds 1 GB:
+
+* The kernel may refuse allocations.
+* The kernel may invoke the OOM Killer.
+* A process inside the container may be terminated.
+
+---
+
+## How does the kernel know which process belongs to which container?
+
+Every container has a cgroup.
+
+Example:
+
+```
+/sys/fs/cgroup/
+    container_A/
+        pid 100
+        pid 101
+
+    container_B/
+        pid 200
+        pid 201
+```
+
+When a process allocates memory or uses CPU:
+
+1. Kernel sees PID.
+2. Kernel checks its cgroup.
+3. Kernel applies that cgroup's limits.
+
+---
+
+## Why are containers lightweight?
+
+Because there is only **one kernel**.
+
+A server running 100 containers still has:
+
+```
+1 Linux Kernel
+100 isolated process groups
+```
+
+while 100 VMs would have:
+
+```
+100 kernels
+100 operating systems
+```
+
+which requires much more RAM and CPU.
+
+---
+
+# 1. How does cgroup decide who gets RAM?
+
+It doesn't decide.
+
+This is the most common misunderstanding.
+
+You decide.
+
+Example:
+
+```bash
+docker run --memory=2g nginx
+```
+
+and
+
+```bash
+docker run --memory=1g mysql
+```
+
+You told Docker:
+
+```text
+nginx -> max 2 GB
+mysql -> max 1 GB
+```
+
+Docker writes those limits into cgroups.
+
+The kernel enforces them.
+
+# 2. What if I don't specify a limit?
+
+Example:
+
+```bash
+docker run nginx
+```
+
+Then:
+
+```text
+Container A
+limit = host memory
+```
+
+The container can use as much RAM as available.
+
+---
+
+# 3. CPU limits are similar
+
+Example:
+
+```bash
+docker run --cpus=2 nginx
+```
+
+means:
+
+```text
+Container can consume
+up to 2 CPUs worth of time
+```
+
+Again:
+
+Docker doesn't invent the number.
+
+You configured it.
+
+---
+
+# DIAGRAM of how docker works...
+
+```text
+Docker CLI
+    ↓
+Docker Daemon
+    ↓
+containerd
+    ↓
+runc
+    ↓
+Linux Kernel
+```
+
+Let's follow a real command.
+
+You type:
+
+```bash
+docker run nginx
+```
+
+---
+
+### Step 1: Docker CLI
+
+The `docker` command is only a client.
+
+```bash
+docker run nginx
+```
+
+It sends a request.
+
+Think:
+
+```text
+"Please create a container."
+```
+
+---
+
+### Step 2: Docker Daemon
+
+The daemon (`dockerd`) receives the request.
+
+```text
+docker CLI
+    ↓
+dockerd
+```
+
+The daemon is the brain of Docker.
+
+It:
+
+* pulls images
+* creates networks
+* manages volumes
+* starts containers
+
+---
+
+### Step 3: containerd
+
+Docker tells containerd:
+
+```text
+Create a new container.
+```
+
+containerd is a container manager.
+
+---
+
+### Step 4: runc
+
+containerd tells runc:
+
+```text
+Actually create the container.
+```
+
+runc is very small.
+
+Its job:
+
+* create namespaces
+* create cgroups
+* start the process
+
+---
+
+### Step 5: Linux Kernel
+
+runc makes system calls like:
+
+```c
+clone()
+unshare()
+setns()
+```
+
+The kernel creates:
+
+```text
+PID namespace
+Network namespace
+Mount namespace
+...
+```
+
+and starts the process.
+
+After that runc exits.
+
+The kernel continues running the container.
+
+---
+
+# About PID 1 inside containers
+
+Excellent question.
+
+On the host:
+
+```text
+PID 1 = systemd
+```
+
+or
+
+```text
+PID 1 = init
+```
+
+depending on the distro.
+
+This is the real PID 1.
+
+---
+
+Inside a container:
+
+Suppose you run:
+
+```bash
+docker run nginx
+```
+
+Inside the container:
+
+```bash
+ps aux
+```
+
+shows:
+
+```text
+PID 1 nginx
+```
+
+Why?
+
+Because the container has its own PID namespace.
+
+---
+
+Host sees:
+
+```text
+PID 5421 nginx
+```
+
+Container sees:
+
+```text
+PID 1 nginx
+```
+
+Same process.
+
+Different namespace.
+
+---
+
+Example:
+
+```text
+HOST
+----
+PID 1      systemd
+PID 5421   nginx
+PID 5422   worker
+
+CONTAINER
+---------
+PID 1      nginx
+PID 2      worker
+```
+
+The container cannot see the host PIDs.
+
+---
+
+# 7. Why does PID 1 keep the container alive?
+
+Docker's rule is simple:
+
+> If PID 1 exits, the container stops.
+
+Example:
+
+```bash
+docker run ubuntu
+```
+
+Ubuntu starts.
+
+No foreground process exists.
+
+PID 1 exits.
+
+Container stops immediately.
+
+---
+
+That's why in the Inception project you'll often see:
+
+```dockerfile
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+or another command that run in the background to make sure the container still alive
+
+
+<details>
+
+<details>
 <summary><b>What means SSL and Where is the SSL “layer”?</b></summary><br>
 
 - Secure Sockets Layer (SSL) is not a physical layer.
@@ -1641,3 +2199,6 @@ WordPress fills the folder
 </details>
 
 </details>
+
+
+
